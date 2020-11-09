@@ -78,16 +78,10 @@ fun String.toRational() : Rational {
 
 }
 infix fun Number.divBy(d: Number) : Rational {
-    val gcd1 = this.toLong().toBigInteger().gcd(d.toLong().toBigInteger())
 
-    var n : BigInteger = this.toLong().toBigInteger() / gcd1
-    var d : BigInteger = d.toLong().toBigInteger() / gcd1
-
-    if(d < 0.toBigInteger()) {
-        d *= (-1).toBigInteger()
-        n *= (-1).toBigInteger()
-    }
-
+    var n : BigInteger = this.toLong().toBigInteger()
+    var d : BigInteger = d.toLong().toBigInteger()
+    
     return Rational(n,d)
 }
 operator fun Rational.plus(r: Rational) : Rational {
