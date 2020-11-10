@@ -1,7 +1,10 @@
 package rationals
 
+import java.lang.IllegalStateException
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.BigInteger.ONE
+import java.math.BigInteger.ZERO
 import java.math.MathContext
 
 
@@ -39,20 +42,20 @@ fun main() {
             "1824032980372593840238402384283940832058".toBigInteger() == 1 divBy 2)
 }
 
-data class Rational(var n: BigInteger, var d: BigInteger): Comparable<Rational> {
+data class Rational
+    private constructor(val n: BigInteger, val d: BigInteger): Comparable<Rational> {
 
-    init {
-        val gcd1 = n.gcd(d)
-
-        n = n.divide(gcd1)
-        d = d.divide(gcd1)
-
-        if(d < 0.toBigInteger()) {
-            d *= (-1).toBigInteger()
-            n *= (-1).toBigInteger()
+    companion object {
+        fun create(n: BigInteger, d: BigInteger) : Rational {
+            return normalize(n,d)
+        }
+        private fun normalize(n: BigInteger, d: BigInteger) : Rational {
+            require(d != ZERO) { "Denominator must not be zero" }
+            val gcd1 = n.gcd(d)
+            val sign = d.signum().toBigInteger()
+            return Rational(n.divide(gcd1) * sign ,d.divide(gcd1) * sign)
         }
     }
-
     override fun compareTo(r: Rational): Int {
         val div1 : BigDecimal = (n.toBigDecimal().divide(d.toBigDecimal(), MathContext(40)))
         val div2 : BigDecimal = (r.n.toBigDecimal().divide(r.d.toBigDecimal(), MathContext(40)))
@@ -66,74 +69,36 @@ data class Rational(var n: BigInteger, var d: BigInteger): Comparable<Rational> 
         return "${n}/${d}"
     }
 }
-data class RationalRange(override val endInclusive: Rational,override val start: Rational) : ClosedRange<Rational>
-
 fun String.toRational() : Rational {
-    val rational = this.split("/")
-    if(rational.size > 1) {
-        return Rational(rational[0].toBigInteger(),rational[1].toBigInteger())
-    } else {
-        return Rational(rational[0].toBigInteger(),1.toBigInteger())
-    }
+    fun String.toBigIntegerOrFail()  = toBigIntegerOrNull() ?: throw IllegalStateException(
+            "Expecting rational in the form of 'n/d' or 'n', was: '${this@toRational}'")
 
+    if(!contains("/")) {
+        return Rational.create(toBigIntegerOrFail(), ONE)
+    }
+    val part = this.split("/")
+    return Rational.create(part[0].toBigIntegerOrFail(), part[1].toBigIntegerOrFail())
 }
+
 infix fun Number.divBy(d: Number) : Rational {
 
     var n : BigInteger = this.toLong().toBigInteger()
     var d : BigInteger = d.toLong().toBigInteger()
-    
-    return Rational(n,d)
+
+    return Rational.create(n,d)
 }
 operator fun Rational.plus(r: Rational) : Rational {
-    val n1 = this.n
-    val n2 = r.n
-
-    val d1 = this.d
-    val d2 = r.d
-
-    val common = d1 * d2
-    val s1 = (common / d1) * n1
-    val s2 = (common / d2) * n2
-
-    val sum = s1 + s2
-
-    if(sum.mod(common) == 0.toBigInteger()) {
-        return Rational(sum / common,1.toBigInteger())
-    } else {
-        return Rational(sum,common)
-    }
+    return Rational.create(n * r.d + r.n * d, d * r.d)
 }
 operator fun Rational.minus(r: Rational) : Rational {
-    val n1 = this.n
-    val n2 = r.n
-
-    val d1 = this.d
-    val d2 = r.d
-
-    val common = d1 * d2
-    val s1 = (common / d1) * n1
-    val s2 = (common / d2) * n2
-
-    val sum = s1 - s2
-
-    return Rational(sum,common)
+    return Rational.create(n * r.d - r.n * d, d * r.d)
 }
 operator fun Rational.div(r: Rational) : Rational {
-
-    return Rational(this.n * r.d,this.d * r.n)
+    return Rational.create(this.n * r.d,this.d * r.n)
 }
 operator fun Rational.times(r: Rational) : Rational {
-    return Rational(this.n * r.n,this.d * r.d)
+    return Rational.create(this.n * r.n,this.d * r.d)
 }
 operator fun Rational.unaryMinus() : Rational {
-    val n = n * -1.toBigInteger()
-    var d = d * -1.toBigInteger()
-    if(d < 0.toBigInteger()) {
-        d *= -1.toBigInteger()
-    }
-    return Rational(n,d)
-}
-
-operator fun Rational.rangeTo(r: Rational) : RationalRange {
-    return RationalRange(Rational(r.n,r.d),Rational(n,d))
+    return Rational.create(-n,d)
 }
