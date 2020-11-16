@@ -5,6 +5,12 @@ import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runners.MethodSorters
 
+/** This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ * Copyright 2020, Gerardo Marquez.
+ */
+
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class TestGameBoard {
     operator fun <T> GameBoard<T>.get(i: Int, j: Int) = get(getCell(i, j))
